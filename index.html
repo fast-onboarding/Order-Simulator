@@ -85,86 +85,14 @@
 
         const UberEatsSimulator = () => {
             const [orders, setOrders] = useState([]);
-            
-            // 步驟狀態 (簡化為 5 步): 
-            // 0=等待
-            // 1=出現綠色新訂單卡片 (有遮罩)
-            // 2=接單 Modal (接受)
-            // 3=點擊準備中卡片
-            // 4=準備中 Modal (檢視餐點 + 按完成)
-            // 5=訂單進入已備妥 (結束)
             const [tutorialStep, setTutorialStep] = useState(0);
-            
-            // incomingOrder: 新訂單暫存區 (尚未接受)
             const [incomingOrder, setIncomingOrder] = useState(null);
             const [showOrderModal, setShowOrderModal] = useState(null);
-            const [prepTime, setPrepTime] = useState(15); // 預設準備時間
+            const [prepTime, setPrepTime] = useState(15);
             
             const [isTutorialActive, setIsTutorialActive] = useState(true);
             const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
-            // SEO 優化：設定 Meta Tags 與 結構化資料
-            useEffect(() => {
-                // 1. 設定網頁標題
-                document.title = "Uber Eats 如何接單？商家接單系統模擬教學 (免費練習工具)";
-
-                // 2. 動態注入 Meta Tags
-                const setMetaTag = (name, content) => {
-                let element = document.querySelector(`meta[name="${name}"]`);
-                if (!element) {
-                    element = document.createElement('meta');
-                    element.setAttribute('name', name);
-                    document.head.appendChild(element);
-                }
-                element.setAttribute('content', content);
-                };
-
-                setMetaTag('description', 'Uber Eats 商家如何接單？專為餐廳老闆設計的免費模擬器。透過互動式教學，5分鐘快速學會接單、調整時間、完成訂單。解決「不會接單」的困擾。');
-                setMetaTag('keywords', 'Uber Eats 如何接單, Uber Eats 接單教學, Uber Eats 商家後台, 餐廳接單流程, 外送平台教學, 模擬器');
-                setMetaTag('author', 'Uber Eats 模擬教學工具');
-
-                // 3. Open Graph Tags (優化社群分享預覽)
-                const setOgTag = (property, content) => {
-                let element = document.querySelector(`meta[property="${property}"]`);
-                if (!element) {
-                    element = document.createElement('meta');
-                    element.setAttribute('property', property);
-                    document.head.appendChild(element);
-                }
-                element.setAttribute('content', content);
-                };
-                
-                setOgTag('og:title', 'Uber Eats 如何接單？商家必備練習工具');
-                setOgTag('og:description', '還不熟悉怎麼接單嗎？來這裡免費練習！模擬真實介面，教你如何應對新訂單。');
-                setOgTag('og:type', 'website');
-
-                // 4. JSON-LD 結構化資料 (幫助 Google 理解這是一個軟體工具)
-                const scriptId = 'seo-structured-data';
-                if (!document.getElementById(scriptId)) {
-                const script = document.createElement('script');
-                script.id = scriptId;
-                script.type = 'application/ld+json';
-                script.textContent = JSON.stringify({
-                    "@context": "https://schema.org",
-                    "@type": "SoftwareApplication",
-                    "name": "Uber Eats 接單模擬器",
-                    "applicationCategory": "BusinessApplication",
-                    "operatingSystem": "Web Browser",
-                    "offers": {
-                    "@type": "Offer",
-                    "price": "0",
-                    "priceCurrency": "TWD",
-                    "availability": "https://schema.org/InStock"
-                    },
-                    "description": "提供 Uber Eats 商家互動式接單練習，模擬真實平板介面，包含新訂單通知、接受訂單、餐點準備確認等功能。",
-                    "featureList": "新訂單模擬, 接單操作練習, 準備時間調整, 完成訂單流程, 互動式教學",
-                    "inLanguage": "zh-TW"
-                });
-                document.head.appendChild(script);
-                }
-            }, []);
-
-            // 初始化模擬訂單
             useEffect(() => {
                 const timer = setTimeout(() => {
                     triggerNewOrder();
@@ -202,13 +130,11 @@
                 setShowOrderModal(null);
                 setTutorialStep(0);
                 setIsTutorialActive(true);
-                // 稍微延遲後重新觸發新訂單，回到步驟 1
                 setTimeout(() => {
                     triggerNewOrder();
                 }, 800);
             };
 
-            // 處理點擊卡片
             const handleCardClick = (order, isIncoming = false) => {
                 if (isTutorialActive) {
                     if (isIncoming && tutorialStep !== 1) return;
@@ -217,12 +143,10 @@
 
                 setShowOrderModal(isIncoming ? incomingOrder : order);
                 
-                // STEP 1 -> 2: 點擊綠色新訂單 -> 進入接單詳情
                 if (isTutorialActive && isIncoming && tutorialStep === 1) {
                     setTutorialStep(2);
                 }
 
-                // STEP 3 -> 4: 點擊準備中卡片 -> 進入檢視與完成教學
                 if (isTutorialActive && !isIncoming && order.status === 'preparing' && tutorialStep === 3) {
                     setTutorialStep(4);
                 }
@@ -236,7 +160,6 @@
                 }
             };
 
-            // 接單動作
             const handleAcceptOrder = () => {
                 if (!incomingOrder) return;
                 if (isTutorialActive && tutorialStep !== 2) return;
@@ -247,13 +170,11 @@
                 setIncomingOrder(null);
                 setShowOrderModal(null);
                 
-                // STEP 2 -> 3
                 if (isTutorialActive && tutorialStep === 2) {
                     setTutorialStep(3);
                 }
             };
 
-            // 完成訂單動作
             const handleMarkReady = (orderId) => {
                 if (isTutorialActive && tutorialStep !== 4) return;
 
@@ -262,7 +183,6 @@
                 ));
                 setShowOrderModal(null);
                 
-                // STEP 4 -> 5
                 if (isTutorialActive && tutorialStep === 4) {
                     setTutorialStep(5);
                 }
@@ -272,7 +192,6 @@
                 setPrepTime(prev => Math.max(5, prev + delta));
             };
 
-            // 高亮樣式
             const getHighlightClass = (targetStep) => {
                 if (!isTutorialActive) return '';
                 const isMatch = Array.isArray(targetStep) ? targetStep.includes(tutorialStep) : targetStep === tutorialStep;
@@ -283,7 +202,6 @@
             };
 
             const TutorialOverlay = () => {
-                // 步驟 1 也要顯示遮罩，讓非綠色卡片區域變灰
                 if (!isTutorialActive || tutorialStep === 0) return null;
                 return <div className="fixed inset-0 bg-black/60 z-[60] transition-opacity duration-300 backdrop-blur-[1px]"></div>;
             };
@@ -291,23 +209,21 @@
             const TutorialTip = ({ step, currentStep, children, position = "top-10 left-10", arrowPosition = "bottom" }) => {
                 if (step !== currentStep) return null;
                 const arrowBase = "absolute w-4 h-4 bg-[#276EF1] transform rotate-45 border-white/20";
-                const arrowSpecific = arrowPosition === "top" 
-                    ? "-top-2 left-4 border-l border-t"
-                    : arrowPosition === "right"
-                    ? "top-4 -right-2 border-r border-t"
-                    : arrowPosition === "left"
-                    ? "top-4 -left-2 border-l border-b"
-                    : "-bottom-2 left-4 border-r border-b";
+                
+                let arrowSpecific = "";
+                if (arrowPosition === "top") arrowSpecific = "-top-2 left-4 border-l border-t";
+                else if (arrowPosition === "bottom") arrowSpecific = "-bottom-2 left-4 border-r border-b";
+                else if (arrowPosition === "left") arrowSpecific = "top-4 -left-2 border-l border-b";
+                else if (arrowPosition === "right") arrowSpecific = "top-4 -right-2 border-r border-t";
 
                 return (
-                    <div className={`absolute z-[80] bg-[#276EF1] text-white p-4 rounded-lg shadow-xl animate-bounce-subtle border border-white/20 ${position} w-64 pointer-events-auto`}>
+                    <div className={`absolute z-[150] bg-[#276EF1] text-white p-4 rounded-lg shadow-xl animate-bounce-subtle border border-white/20 ${position} w-64 pointer-events-auto`}>
                         <div className="flex justify-between items-start mb-2">
                             <span className="font-bold text-xs bg-black/20 px-2 py-0.5 rounded">教學步驟 {step}/5</span>
-                            <button onClick={() => setIsTutorialActive(false)} className="text-white/80 hover:text-white text-xs underline">跳過</button>
+                            {/* 移除跳過按鈕 */}
                         </div>
                         <div className="text-sm font-medium leading-relaxed mb-3">{children}</div>
                         
-                        {/* Step 5 專用：按鈕群組 */}
                         {step === 5 && (
                             <div className="flex flex-col gap-2 mt-2">
                                 <button 
@@ -339,16 +255,14 @@
                 <div className="flex h-screen bg-white font-sans text-[#262626] overflow-hidden relative selection:bg-green-100">
                     <TutorialOverlay />
 
-                    {/* 頂部綠色通知橫幅 (確保在遮罩之上 z-70) */}
+                    {/* 頂部通知 */}
                     {incomingOrder && (
                         <div className={`fixed top-0 left-0 right-0 h-16 bg-[#0E8345] flex items-center justify-between px-6 shadow-md animate-slide-down transition-all duration-300 ${isTutorialActive && tutorialStep === 1 ? 'z-[70]' : 'z-[50]'}`}>
                             <div className="flex items-center gap-3 text-white">
                                 <ShoppingBag size={24} fill="white" />
                                 <span className="font-bold text-lg">新訂單</span>
                             </div>
-                            
                             <div className="flex items-center gap-4">
-                                {/* Step 1: 快速加入按鈕 (放在 Banner 右上角) */}
                                 {isTutorialActive && tutorialStep === 1 && (
                                     <a 
                                         href="https://lin.ee/U0aUaIG" 
@@ -384,19 +298,17 @@
                         </div>
                     </div>
 
-                    {/* 主內容區域 (SEO: 使用 main 標籤) */}
+                    {/* 主內容區域 */}
                     <main className={`flex-1 flex flex-col h-full relative z-auto bg-white ${incomingOrder ? 'mt-16' : ''}`}>
                         <div className={`px-8 py-6 flex items-center justify-between bg-white ${isTutorialActive && tutorialStep !== 1 ? 'opacity-50' : ''}`}>
                             <div className="flex items-center gap-4">
                                 <h1 className="text-3xl font-bold tracking-tight">訂單</h1>
-                                {/* 模擬教學模式標籤 */}
                                 {isTutorialActive && (
                                     <span className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full z-[80] relative">
                                         🟢 模擬教學模式 ({tutorialStep}/5)
                                     </span>
                                 )}
                             </div>
-                            
                             <div className="flex items-center gap-4">
                                 <div className="bg-[#EEEEEE] px-4 py-2 flex items-center gap-2 rounded-full">
                                     <div className="w-2 h-2 rounded-full bg-[#0E8345]"></div>
@@ -406,18 +318,37 @@
                             </div>
                         </div>
 
+                        {/* 全域提示層 */}
+                        
+                        {/* STEP 1: 放在綠色卡片「下面」 */}
+                        {tutorialStep === 1 && incomingOrder && (
+                            <div className="absolute top-80 left-10 z-[150]">
+                                <TutorialTip step={1} currentStep={tutorialStep} position="relative" arrowPosition="top">
+                                    這是一張新訂單！綠色卡片代表尚未接受。請點擊它。
+                                </TutorialTip>
+                            </div>
+                        )}
+
+                        {/* STEP 3: 放在白色準備中卡片「下面」 */}
+                        {tutorialStep === 3 && preparingOrders.length > 0 && (
+                            <div className="absolute top-80 left-10 z-[150]">
+                                <TutorialTip step={3} currentStep={tutorialStep} position="relative" arrowPosition="top">
+                                    訂單變白色了，表示正在準備中。點擊卡片查看製作內容。
+                                </TutorialTip>
+                            </div>
+                        )}
+
+                        {/* STEP 5: 放在中間偏左 */}
+                        {tutorialStep === 5 && (
+                            <div className="absolute top-32 left-1/2 -translate-x-[110%] z-[150]">
+                                <TutorialTip step={5} currentStep={tutorialStep} position="relative" arrowPosition="right">
+                                    流程結束！訂單已移至右側「已備妥」，等待外送員取餐。
+                                </TutorialTip>
+                            </div>
+                        )}
+
                         {/* 雙欄位區域 */}
                         <div className="flex-1 p-6 overflow-hidden flex gap-6 relative">
-                            
-                            {/* STEP 5 提示框 (移到最外層，位於中間灰色區域，避免被 overflow-hidden 切掉) */}
-                            {tutorialStep === 5 && (
-                                <div className="absolute top-24 right-[52%] z-[80]">
-                                    <TutorialTip step={5} currentStep={tutorialStep} position="relative" arrowPosition="right">
-                                        流程結束！訂單已移至右側「已備妥」，等待外送員取餐。
-                                    </TutorialTip>
-                                </div>
-                            )}
-
                             {/* 左欄：準備中 */}
                             <section className="flex-1 flex flex-col bg-white rounded-lg h-full overflow-hidden" aria-label="準備中訂單">
                                 <div className="p-2 mb-2 flex justify-between items-center">
@@ -428,9 +359,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                
                                 <div className="flex-1 overflow-y-auto bg-white relative pr-2">
-                                    {/* 綠色新訂單卡片 */}
                                     {incomingOrder && (
                                         <article 
                                             onClick={() => handleCardClick(incomingOrder, true)}
@@ -448,14 +377,8 @@
                                             <div className="text-sm font-bold text-white flex justify-end">
                                                 接受訂單時間剩下 11 分鐘
                                             </div>
-                                            
-                                            {/* Step 1 Tip */}
-                                            <TutorialTip step={1} currentStep={tutorialStep} position="top-full mt-4 left-1/2 -translate-x-1/2" arrowPosition="top">
-                                                這是一張新訂單！綠色卡片代表尚未接受。請點擊它。
-                                            </TutorialTip>
                                         </article>
                                     )}
-                                    {/* 準備中訂單 */}
                                     {preparingOrders.map(order => (
                                         <article 
                                             key={order.id}
@@ -472,10 +395,6 @@
                                                 </div>
                                             </div>
                                             <p className="text-gray-500 text-sm">{order.displayId} • {order.items.length} 項商品</p>
-                                            
-                                            <TutorialTip step={3} currentStep={tutorialStep} position="top-full mt-2 left-1/2 -translate-x-1/2" arrowPosition="top">
-                                                訂單變白色了，表示正在準備中。點擊卡片查看製作內容。
-                                            </TutorialTip>
                                         </article>
                                     ))}
                                 </div>
@@ -491,13 +410,11 @@
                                 </div>
                                 <div className="flex-1 overflow-y-auto bg-white relative pr-2">
                                     {readyOrders.map(order => (
-                                        // Step 5: 已備妥卡片 (這裡只負責高亮，不負責顯示 Tooltip)
                                         <article key={order.id} className={`mb-4 bg-white border border-gray-200 rounded-lg p-5 flex justify-between items-center ${isTutorialActive && tutorialStep === 5 ? getHighlightClass(5) : ''}`}>
                                             <div>
                                                 <h3 className="font-bold text-lg text-gray-800">{order.customerName}</h3>
                                                 <p className="text-gray-400 text-sm mt-1">{order.displayId} • {order.items.length} 項商品</p>
                                             </div>
-                                            
                                             <div className="flex items-center gap-4">
                                                 <div className="text-right">
                                                     <span className="text-[#0E8345] font-bold text-sm block">即將抵達</span>
@@ -569,7 +486,9 @@
                                         </div>
                                     </div>
 
+                                    {/* Modal Right Column (relative for tooltips) */}
                                     <div className="w-1/2 p-8 flex flex-col justify-center items-center bg-white relative">
+                                        
                                         {/* CASE 1: 新訂單 (Incoming) */}
                                         {showOrderModal.status === 'incoming' && (
                                             <>
@@ -582,7 +501,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div className="w-full space-y-3 mt-auto">
+                                                <div className="w-full space-y-3 mt-auto relative">
                                                     <button className="w-full py-4 bg-gray-100 text-gray-800 font-bold text-lg rounded-lg hover:bg-gray-200">
                                                         調整訂單
                                                     </button>
@@ -593,10 +512,16 @@
                                                         >
                                                             接受
                                                         </button>
-                                                        <TutorialTip step={2} currentStep={tutorialStep} position="absolute bottom-full mb-4 left-1/2 -translate-x-1/2" arrowPosition="bottom">
-                                                            確認內容無誤後，請按下黑色的「接受」按鈕。
-                                                        </TutorialTip>
                                                     </div>
+                                                    
+                                                    {/* STEP 2 Tooltip: 放在接受按鈕上方 */}
+                                                    {isTutorialActive && tutorialStep === 2 && (
+                                                        <div className="absolute bottom-[110%] left-1/2 -translate-x-1/2 z-[150]">
+                                                            <TutorialTip step={2} currentStep={tutorialStep} position="relative" arrowPosition="bottom">
+                                                                確認內容無誤後，請按下黑色的「接受」按鈕。
+                                                            </TutorialTip>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </>
                                         )}
@@ -615,21 +540,27 @@
                                                     </div>
                                                 </div>
 
-                                                <div className="w-full space-y-3 mt-auto">
+                                                <div className="w-full space-y-3 mt-auto relative">
                                                     <button className="w-full py-4 bg-gray-100 text-gray-800 font-bold text-lg rounded-lg hover:bg-gray-200">
                                                         調整訂單
                                                     </button>
                                                     <div className={isTutorialActive && tutorialStep === 4 ? getHighlightClass(4) : ''}>
                                                         <button 
                                                             onClick={() => handleMarkReady(showOrderModal.id)}
-                                                            className="w-full py-4 bg-black text-white font-bold text-lg rounded-lg hover:bg-gray-800 shadow-xl"
+                                                            className="w-full py-4 bg-gray-100 text-gray-800 font-bold text-lg rounded-lg hover:bg-gray-200 shadow-sm"
                                                         >
                                                             已備妥
                                                         </button>
-                                                        <TutorialTip step={4} currentStep={tutorialStep} position="absolute bottom-full mb-4 left-1/2 -translate-x-1/2" arrowPosition="bottom">
-                                                            餐點製作完成後，請按下「已備妥」。
-                                                        </TutorialTip>
                                                     </div>
+
+                                                    {/* STEP 4 Tooltip: 放在已備妥按鈕上方 */}
+                                                    {isTutorialActive && tutorialStep === 4 && (
+                                                        <div className="absolute bottom-[110%] left-1/2 -translate-x-1/2 z-[150]">
+                                                            <TutorialTip step={4} currentStep={tutorialStep} position="relative" arrowPosition="bottom">
+                                                                餐點製作完成後，請按下「已備妥」。
+                                                            </TutorialTip>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </>
                                         )}
