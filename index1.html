@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uber Eats 接單系統模擬教學</title>
+    <title>Uber Eats 如何接單？商家接單系統模擬教學 (免費練習工具)</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 設定 Tailwind 動畫擴充 -->
@@ -102,6 +102,67 @@
             
             const [isTutorialActive, setIsTutorialActive] = useState(true);
             const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+
+            // SEO 優化：設定 Meta Tags 與 結構化資料
+            useEffect(() => {
+                // 1. 設定網頁標題
+                document.title = "Uber Eats 如何接單？商家接單系統模擬教學 (免費練習工具)";
+
+                // 2. 動態注入 Meta Tags
+                const setMetaTag = (name, content) => {
+                let element = document.querySelector(`meta[name="${name}"]`);
+                if (!element) {
+                    element = document.createElement('meta');
+                    element.setAttribute('name', name);
+                    document.head.appendChild(element);
+                }
+                element.setAttribute('content', content);
+                };
+
+                setMetaTag('description', 'Uber Eats 商家如何接單？專為餐廳老闆設計的免費模擬器。透過互動式教學，5分鐘快速學會接單、調整時間、完成訂單。解決「不會接單」的困擾。');
+                setMetaTag('keywords', 'Uber Eats 如何接單, Uber Eats 接單教學, Uber Eats 商家後台, 餐廳接單流程, 外送平台教學, 模擬器');
+                setMetaTag('author', 'Uber Eats 模擬教學工具');
+
+                // 3. Open Graph Tags (優化社群分享預覽)
+                const setOgTag = (property, content) => {
+                let element = document.querySelector(`meta[property="${property}"]`);
+                if (!element) {
+                    element = document.createElement('meta');
+                    element.setAttribute('property', property);
+                    document.head.appendChild(element);
+                }
+                element.setAttribute('content', content);
+                };
+                
+                setOgTag('og:title', 'Uber Eats 如何接單？商家必備練習工具');
+                setOgTag('og:description', '還不熟悉怎麼接單嗎？來這裡免費練習！模擬真實介面，教你如何應對新訂單。');
+                setOgTag('og:type', 'website');
+
+                // 4. JSON-LD 結構化資料 (幫助 Google 理解這是一個軟體工具)
+                const scriptId = 'seo-structured-data';
+                if (!document.getElementById(scriptId)) {
+                const script = document.createElement('script');
+                script.id = scriptId;
+                script.type = 'application/ld+json';
+                script.textContent = JSON.stringify({
+                    "@context": "https://schema.org",
+                    "@type": "SoftwareApplication",
+                    "name": "Uber Eats 接單模擬器",
+                    "applicationCategory": "BusinessApplication",
+                    "operatingSystem": "Web Browser",
+                    "offers": {
+                    "@type": "Offer",
+                    "price": "0",
+                    "priceCurrency": "TWD",
+                    "availability": "https://schema.org/InStock"
+                    },
+                    "description": "提供 Uber Eats 商家互動式接單練習，模擬真實平板介面，包含新訂單通知、接受訂單、餐點準備確認等功能。",
+                    "featureList": "新訂單模擬, 接單操作練習, 準備時間調整, 完成訂單流程, 互動式教學",
+                    "inLanguage": "zh-TW"
+                });
+                document.head.appendChild(script);
+                }
+            }, []);
 
             // 初始化模擬訂單
             useEffect(() => {
