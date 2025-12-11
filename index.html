@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uber Eats 如何接單？商家接單系統模擬教學 (免費練習工具)</title>
+    <!-- SEO 優化：針對想申請商家的標題 -->
+    <title>Uber Eats 商家接單模擬器 - 開店申請前必看！免費體驗接單流程</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 設定 Tailwind 動畫擴充 -->
@@ -98,6 +99,74 @@
             
             const [isTutorialActive, setIsTutorialActive] = useState(true);
             const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+
+            // SEO 優化：設定 Meta Tags 與 結構化資料
+            useEffect(() => {
+                // 1. 設定網頁標題 (針對想申請的商家)
+                document.title = "Uber Eats 商家接單模擬器 - 開店申請前必看！免費體驗接單流程";
+
+                // 2. 動態注入 Meta Tags
+                const setMetaTag = (name, content) => {
+                let element = document.querySelector(`meta[name="${name}"]`);
+                if (!element) {
+                    element = document.createElement('meta');
+                    element.setAttribute('name', name);
+                    document.head.appendChild(element);
+                }
+                element.setAttribute('content', content);
+                };
+
+                // 優化描述：針對「猶豫是否申請」或「擔心不會操作」的商家
+                setMetaTag('description', '準備申請 Uber Eats 合作嗎？擔心操作太複雜？立即免費試用「Uber Eats 接單模擬器」！模擬真實商家平板後台，5分鐘教您如何接單、調整準備時間與完成訂單。讓您在正式開店前就熟悉流程，無痛加入外送平台。');
+                
+                // 優化關鍵字：加入申請、合作、開店等詞彙
+                setMetaTag('keywords', 'Uber Eats 申請, Uber Eats 商家合作, Uber Eats 接單教學, 外送平台模擬器, 餐廳開店, 商家後台操作, Uber Eats 費用, 免費試用');
+                setMetaTag('author', 'Uber Eats 模擬教學工具');
+
+                // 3. Open Graph Tags (優化社群分享預覽)
+                const setOgTag = (property, content) => {
+                let element = document.querySelector(`meta[property="${property}"]`);
+                if (!element) {
+                    element = document.createElement('meta');
+                    element.setAttribute('property', property);
+                    document.head.appendChild(element);
+                }
+                element.setAttribute('content', content);
+                };
+                
+                setOgTag('og:title', '想加入 Uber Eats？先來這裡免費模擬接單！(免註冊)');
+                setOgTag('og:description', '專為餐廳老闆設計的接單練習工具。模擬真實介面，從新訂單通知到出餐，幫助您快速評估並熟悉外送流程。');
+                setOgTag('og:type', 'website');
+
+                // 4. JSON-LD 結構化資料
+                const scriptId = 'seo-structured-data';
+                if (!document.getElementById(scriptId)) {
+                const script = document.createElement('script');
+                script.id = scriptId;
+                script.type = 'application/ld+json';
+                script.textContent = JSON.stringify({
+                    "@context": "https://schema.org",
+                    "@type": "SoftwareApplication",
+                    "name": "Uber Eats 商家接單模擬器",
+                    "applicationCategory": "BusinessApplication",
+                    "operatingSystem": "Web Browser",
+                    "offers": {
+                    "@type": "Offer",
+                    "price": "0",
+                    "priceCurrency": "TWD",
+                    "availability": "https://schema.org/InStock"
+                    },
+                    "description": "提供有意申請 Uber Eats 的商家進行接單流程體驗。模擬真實平板介面，包含新訂單通知、接受訂單、餐點準備確認等功能，降低數位轉型門檻。",
+                    "featureList": "新訂單模擬, 商家接單練習, 準備時間調整, 完成訂單流程, 開店前預習",
+                    "audience": {
+                      "@type": "Audience",
+                      "audienceType": "餐廳老闆, 餐飲業者, 欲申請外送平台的商家"
+                    },
+                    "inLanguage": "zh-TW"
+                });
+                document.head.appendChild(script);
+                }
+            }, []);
 
             useEffect(() => {
                 const timer = setTimeout(() => {
