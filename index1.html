@@ -1,0 +1,543 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Bell, 
+  Clock, 
+  ShoppingBag, 
+  Menu as MenuIcon, 
+  Settings, 
+  Headset, // 修正：改用 Headset 耳機圖示
+  Calendar, 
+  ChevronDown,
+  X,
+  CheckSquare,
+  Utensils,
+  CheckCircle,
+  Info,
+  Briefcase,
+  Printer,
+  Phone,
+  Receipt,
+  Minus,
+  Plus,
+  Edit2,
+  ExternalLink,
+  User
+} from 'lucide-react';
+
+const UberEatsSimulator = () => {
+  const [orders, setOrders] = useState([]);
+  
+  // 步驟狀態 (簡化為 5 步): 
+  // 0=等待
+  // 1=出現綠色新訂單卡片
+  // 2=接單 Modal (接受)
+  // 3=點擊準備中卡片
+  // 4=準備中 Modal (檢視餐點 + 按完成)
+  // 5=訂單進入已備妥 (結束)
+  const [tutorialStep, setTutorialStep] = useState(0);
+  
+  // incomingOrder: 新訂單暫存區 (尚未接受)
+  const [incomingOrder, setIncomingOrder] = useState(null);
+  const [showOrderModal, setShowOrderModal] = useState(null);
+  const [prepTime, setPrepTime] = useState(15); // 預設準備時間
+  
+  const [isTutorialActive, setIsTutorialActive] = useState(true);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+
+  // 初始化模擬訂單
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      triggerNewOrder();
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const triggerNewOrder = () => {
+    const newOrder = {
+      id: '#8F3A2',
+      customerName: '王小明',
+      displayId: '8F3A2',
+      items: [
+        { name: '招牌滷肉飯 (大)', qty: 1, options: '加蛋, 不加蔥', price: 65 },
+        { name: '燙青菜', qty: 1, options: '大陸妹', price: 40 },
+        { name: '冬瓜茶', qty: 2, options: '少冰', price: 30 },
+        { name: '滷蛋', qty: 1, options: '', price: 15 },
+        { name: '貢丸湯', qty: 1, options: '', price: 55 }
+      ],
+      total: 235,
+      status: 'incoming', 
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      driverTime: '15 分鐘'
+    };
+    
+    setIncomingOrder(newOrder);
+    if (isTutorialActive) {
+      setTutorialStep(1); 
+    }
+  };
+
+  const handleRestart = () => {
+    setOrders([]);
+    setIncomingOrder(null);
+    setShowOrderModal(null);
+    setTutorialStep(0);
+    setIsTutorialActive(true);
+    // 稍微延遲後重新觸發新訂單，回到步驟 1
+    setTimeout(() => {
+      triggerNewOrder();
+    }, 800);
+  };
+
+  // 處理點擊卡片
+  const handleCardClick = (order, isIncoming = false) => {
+    if (isTutorialActive) {
+      if (isIncoming && tutorialStep !== 1) return;
+      if (!isIncoming && order.status === 'preparing' && tutorialStep !== 3) return;
+    }
+
+    setShowOrderModal(isIncoming ? incomingOrder : order);
+    
+    // STEP 1 -> 2: 點擊綠色新訂單 -> 進入接單詳情
+    if (isTutorialActive && isIncoming && tutorialStep === 1) {
+      setTutorialStep(2);
+    }
+
+    // STEP 3 -> 4: 點擊準備中卡片 -> 進入檢視與完成教學
+    if (isTutorialActive && !isIncoming && order.status === 'preparing' && tutorialStep === 3) {
+      setTutorialStep(4);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowOrderModal(null);
+    if (isTutorialActive) {
+      if (tutorialStep === 2) setTutorialStep(1);
+      if (tutorialStep === 4) setTutorialStep(3);
+    }
+  };
+
+  // 接單動作
+  const handleAcceptOrder = () => {
+    if (!incomingOrder) return;
+    if (isTutorialActive && tutorialStep !== 2) return;
+
+    const acceptedOrder = { ...incomingOrder, status: 'preparing' };
+    setOrders(prev => [acceptedOrder, ...prev]); 
+    
+    setIncomingOrder(null);
+    setShowOrderModal(null);
+    
+    // STEP 2 -> 3
+    if (isTutorialActive && tutorialStep === 2) {
+      setTutorialStep(3);
+    }
+  };
+
+  // 完成訂單動作
+  const handleMarkReady = (orderId) => {
+    if (isTutorialActive && tutorialStep !== 4) return;
+
+    setOrders(prev => prev.map(order => 
+      order.id === orderId ? { ...order, status: 'ready' } : order
+    ));
+    setShowOrderModal(null);
+    
+    // STEP 4 -> 5
+    if (isTutorialActive && tutorialStep === 4) {
+      setTutorialStep(5);
+    }
+  };
+
+  const adjustPrepTime = (delta) => {
+    setPrepTime(prev => Math.max(5, prev + delta));
+  };
+
+  // 高亮樣式
+  const getHighlightClass = (targetStep) => {
+    if (!isTutorialActive) return '';
+    const isMatch = Array.isArray(targetStep) ? targetStep.includes(tutorialStep) : targetStep === tutorialStep;
+    if (isMatch) {
+      return "relative z-[70] ring-4 ring-[#276EF1] ring-opacity-60 shadow-2xl rounded-lg pointer-events-auto transition-all duration-300 transform scale-[1.02]";
+    }
+    return "opacity-50 pointer-events-none filter grayscale-[0.5]";
+  };
+
+  const TutorialOverlay = () => {
+    // 步驟 1 也要顯示遮罩，讓非綠色卡片區域變灰
+    if (!isTutorialActive || tutorialStep === 0) return null;
+    return <div className="fixed inset-0 bg-black/60 z-[60] transition-opacity duration-300 backdrop-blur-[1px]"></div>;
+  };
+
+  const TutorialTip = ({ step, currentStep, children, position = "top-10 left-10", arrowPosition = "bottom" }) => {
+    if (step !== currentStep) return null;
+    const arrowBase = "absolute w-4 h-4 bg-[#276EF1] transform rotate-45 border-white/20";
+    const arrowSpecific = arrowPosition === "top" 
+      ? "-top-2 left-4 border-l border-t"
+      : arrowPosition === "right"
+      ? "top-4 -right-2 border-r border-t"
+      : arrowPosition === "left"
+      ? "top-4 -left-2 border-l border-b"
+      : "-bottom-2 left-4 border-r border-b";
+
+    return (
+      <div className={`absolute z-[80] bg-[#276EF1] text-white p-4 rounded-lg shadow-xl animate-bounce-subtle border border-white/20 ${position} w-64 pointer-events-auto`}>
+        <div className="flex justify-between items-start mb-2">
+          <span className="font-bold text-xs bg-black/20 px-2 py-0.5 rounded">教學步驟 {step}/5</span>
+          <button onClick={() => setIsTutorialActive(false)} className="text-white/80 hover:text-white text-xs underline">跳過</button>
+        </div>
+        <div className="text-sm font-medium leading-relaxed mb-3">{children}</div>
+        
+        {/* Step 5 專用：按鈕群組 */}
+        {step === 5 && (
+          <div className="flex flex-col gap-2 mt-2">
+            <button 
+              onClick={handleRestart}
+              className="w-full bg-white text-blue-600 px-2 py-1.5 rounded text-xs font-bold hover:bg-blue-50 transition-colors"
+            >
+              重新開始
+            </button>
+            <a 
+              href="https://lin.ee/U0aUaIG" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1 w-full bg-[#06C755] hover:bg-[#05b64d] text-white text-xs font-bold py-2 rounded transition-colors shadow-sm"
+            >
+              快速加入 Uber Eats <ExternalLink size={12}/>
+            </a>
+          </div>
+        )}
+
+        <div className={`${arrowBase} ${arrowSpecific}`}></div>
+      </div>
+    );
+  };
+
+  const preparingOrders = orders.filter(o => o.status === 'preparing');
+  const readyOrders = orders.filter(o => o.status === 'ready');
+
+  return (
+    <div className="flex h-screen bg-white font-sans text-[#262626] overflow-hidden relative selection:bg-green-100">
+      <TutorialOverlay />
+
+      {/* 頂部綠色通知橫幅 (確保在遮罩之上 z-70) */}
+      {incomingOrder && (
+        <div className={`fixed top-0 left-0 right-0 h-16 bg-[#0E8345] flex items-center justify-between px-6 shadow-md animate-slide-down transition-all duration-300 ${isTutorialActive && tutorialStep === 1 ? 'z-[70]' : 'z-[50]'}`}>
+           <div className="flex items-center gap-3 text-white">
+              <ShoppingBag size={24} fill="white" />
+              <span className="font-bold text-lg">新訂單</span>
+           </div>
+           
+           <div className="flex items-center gap-4">
+             {/* Step 1: 快速加入按鈕 (放在 Banner 右上角) */}
+             {isTutorialActive && tutorialStep === 1 && (
+                <a 
+                  href="https://lin.ee/U0aUaIG" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 bg-white text-[#0E8345] hover:bg-gray-100 text-sm font-bold py-1.5 px-4 rounded-full shadow-sm transition-all"
+                >
+                  快速加入 Uber Eats <ExternalLink size={14}/>
+                </a>
+             )}
+             <button className="text-white font-bold text-sm hover:bg-white/10 px-4 py-2 rounded transition-colors">
+                檢閱
+             </button>
+           </div>
+        </div>
+      )}
+
+      {/* 側邊導覽列 */}
+      <div className={`flex flex-col items-center py-4 border-r border-gray-100 bg-white transition-all duration-300 ${incomingOrder ? 'mt-16' : ''} ${isSidebarExpanded ? 'w-64 items-start px-4' : 'w-20'} 
+         ${isTutorialActive ? 'z-30 opacity-30 pointer-events-none' : 'z-40'}
+      `}>
+        <div className="mb-8 p-2 cursor-pointer hover:bg-gray-100 rounded-full" onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}>
+          <MenuIcon size={24} color="#000000" />
+        </div>
+        <div className="flex flex-col space-y-6 w-full">
+          <NavIcon icon={<ShoppingBag size={24} />} label="訂單" active={true} expanded={isSidebarExpanded} />
+          <NavIcon icon={<Clock size={24} />} label="訂單紀錄" expanded={isSidebarExpanded} />
+          <NavIcon icon={<Calendar size={24} />} label="已排定的訂單" expanded={isSidebarExpanded} />
+          <NavIcon icon={<Utensils size={24} />} label="價目表" expanded={isSidebarExpanded} />
+          <NavIcon icon={<Bell size={24} />} label="收件匣" expanded={isSidebarExpanded} />
+          <NavIcon icon={<Settings size={24} />} label="設定" expanded={isSidebarExpanded} />
+          <NavIcon icon={<Headset size={24} />} label="幫助" expanded={isSidebarExpanded} /> {/* 修正：使用 Headset */}
+        </div>
+      </div>
+
+      {/* 主內容區域 (SEO: 使用 main 標籤) */}
+      <main className={`flex-1 flex flex-col h-full relative z-auto bg-white ${incomingOrder ? 'mt-16' : ''}`}>
+        <div className={`px-8 py-6 flex items-center justify-between bg-white ${isTutorialActive && tutorialStep !== 1 ? 'opacity-50' : ''}`}>
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold tracking-tight">訂單</h1>
+             {/* 模擬教學模式標籤 */}
+             {isTutorialActive && (
+               <span className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full z-[80] relative">
+                 🟢 模擬教學模式 ({tutorialStep}/5)
+               </span>
+             )}
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <div className="bg-[#EEEEEE] px-4 py-2 flex items-center gap-2 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-[#0E8345]"></div>
+              <span className="text-sm font-bold text-gray-700">營業中</span>
+              <ChevronDown size={16} className="text-gray-500" />
+            </div>
+          </div>
+        </div>
+
+        {/* 雙欄位區域 */}
+        <div className="flex-1 p-6 overflow-hidden flex gap-6 relative">
+          
+          {/* STEP 5 提示框 (移到最外層，位於中間灰色區域，避免被 overflow-hidden 切掉) */}
+          {tutorialStep === 5 && (
+             <div className="absolute top-24 right-[52%] z-[80]">
+                <TutorialTip step={5} currentStep={tutorialStep} position="relative" arrowPosition="right">
+                   流程結束！訂單已移至右側「已備妥」，等待外送員取餐。
+                </TutorialTip>
+             </div>
+          )}
+
+          {/* 左欄：準備中 */}
+          <section className="flex-1 flex flex-col bg-white rounded-lg h-full overflow-hidden" aria-label="準備中訂單">
+             <div className="p-2 mb-2 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                   <span className="font-bold text-gray-700">準備中</span>
+                   <span className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded text-sm font-bold">
+                     {preparingOrders.length + (incomingOrder ? 1 : 0)}
+                   </span>
+                </div>
+             </div>
+             
+             <div className="flex-1 overflow-y-auto bg-white relative pr-2">
+                {/* 綠色新訂單卡片 */}
+                {incomingOrder && (
+                  <article 
+                    onClick={() => handleCardClick(incomingOrder, true)}
+                    className={`mb-4 bg-[#0E8345] text-white rounded-lg p-5 cursor-pointer hover:bg-[#0b6b38] transition-all shadow-md
+                      ${isTutorialActive && tutorialStep === 1 ? getHighlightClass(1) : ''}
+                    `}
+                  >
+                     <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-bold text-xl">{incomingOrder.customerName}</h3>
+                        <span className="font-bold text-xs bg-white/20 px-2 py-1 rounded">新</span>
+                     </div>
+                     <p className="text-white/90 text-sm mb-4">
+                       {incomingOrder.displayId} • {incomingOrder.items.length} 項商品
+                     </p>
+                     <div className="text-sm font-bold text-white flex justify-end">
+                        接受訂單時間剩下 11 分鐘
+                     </div>
+                     
+                     {/* Step 1 Tip */}
+                     <TutorialTip step={1} currentStep={tutorialStep} position="top-full mt-4 left-1/2 -translate-x-1/2" arrowPosition="top">
+                        這是一張新訂單！綠色卡片代表尚未接受。請點擊它。
+                     </TutorialTip>
+                  </article>
+                )}
+                {/* 準備中訂單 */}
+                {preparingOrders.map(order => (
+                  <article 
+                    key={order.id}
+                    onClick={() => handleCardClick(order, false)}
+                    className={`mb-4 bg-white border rounded-lg p-5 cursor-pointer hover:shadow-md transition-all
+                      ${isTutorialActive ? getHighlightClass(3) : 'border-gray-200'}
+                    `}
+                  >
+                     <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-lg text-gray-800">{order.customerName}</h3>
+                        <div className="text-right">
+                           <span className="text-[#0E8345] font-bold text-sm block">即將備妥</span>
+                           <span className="text-gray-400 text-sm">{Math.floor(Math.random() * 5)} 分鐘</span>
+                        </div>
+                     </div>
+                     <p className="text-gray-500 text-sm">{order.displayId} • {order.items.length} 項商品</p>
+                     
+                     <TutorialTip step={3} currentStep={tutorialStep} position="top-full mt-2 left-1/2 -translate-x-1/2" arrowPosition="top">
+                        訂單變白色了，表示正在準備中。點擊卡片查看製作內容。
+                     </TutorialTip>
+                  </article>
+                ))}
+             </div>
+          </section>
+
+          {/* 右欄：已備妥 */}
+          <section className="flex-1 flex flex-col bg-white rounded-lg h-full overflow-hidden" aria-label="已備妥訂單">
+             <div className="p-2 mb-2 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                   <span className="font-bold text-gray-700">已備妥</span>
+                   <span className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded text-sm font-bold">{readyOrders.length}</span>
+                </div>
+             </div>
+             <div className="flex-1 overflow-y-auto bg-white relative pr-2">
+                {readyOrders.map(order => (
+                    // Step 5: 已備妥卡片 (這裡只負責高亮，不負責顯示 Tooltip)
+                    <article key={order.id} className={`mb-4 bg-white border border-gray-200 rounded-lg p-5 flex justify-between items-center ${isTutorialActive && tutorialStep === 5 ? getHighlightClass(5) : ''}`}>
+                       <div>
+                         <h3 className="font-bold text-lg text-gray-800">{order.customerName}</h3>
+                         <p className="text-gray-400 text-sm mt-1">{order.displayId} • {order.items.length} 項商品</p>
+                       </div>
+                       
+                       <div className="flex items-center gap-4">
+                          <div className="text-right">
+                              <span className="text-[#0E8345] font-bold text-sm block">即將抵達</span>
+                              <span className="text-gray-400 text-xs">遞交訂單</span>
+                          </div>
+                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border border-gray-100">
+                             <User className="text-gray-400" size={24} />
+                          </div>
+                       </div>
+                    </article>
+                  ))}
+             </div>
+          </section>
+        </div>
+      </main>
+
+      {/* Modal - 訂單詳情 */}
+      {showOrderModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[110] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-5xl h-[600px] rounded-xl shadow-2xl overflow-hidden flex flex-col relative z-[120]">
+              <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100">
+                  <div className="flex items-center gap-4">
+                      <button onClick={handleCloseModal} className="hover:bg-gray-100 p-2 rounded-full"><X size={24} /></button>
+                      <div>
+                          <h2 className="text-2xl font-bold flex items-center gap-2">
+                              {showOrderModal.customerName} • {showOrderModal.displayId}
+                          </h2>
+                      </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                      <button className="p-3 bg-gray-100 rounded-full hover:bg-gray-200"><Receipt size={20} /></button>
+                      <button className="p-3 bg-gray-100 rounded-full hover:bg-gray-200"><Printer size={20} /></button>
+                      <button className="p-3 bg-gray-100 rounded-full hover:bg-gray-200"><Phone size={20} /></button>
+                  </div>
+              </div>
+
+              <div className="flex-1 flex overflow-hidden">
+                  <div className="w-1/2 p-8 border-r border-gray-100 overflow-y-auto">
+                      <div className="flex items-center gap-4 mb-6 text-sm font-bold text-gray-800">
+                          <span>{showOrderModal.items.length} 件商品</span>
+                          <span className="flex items-center gap-1"><Utensils size={16}/> 是</span>
+                          <span className="bg-gray-100 px-2 py-1 rounded text-gray-600">新顧客</span>
+                      </div>
+
+                      <div className="space-y-6">
+                          {showOrderModal.items.map((item, idx) => (
+                              <div key={idx} className="flex justify-between items-start">
+                                  <div className="flex gap-3">
+                                      <div className="font-bold text-gray-800">{item.qty} ×</div>
+                                      <div>
+                                          <div className="font-bold text-lg text-gray-900">{item.name}</div>
+                                          {item.options && <div className="text-gray-500 text-sm mt-1">{item.options}</div>}
+                                      </div>
+                                  </div>
+                                  <div className="font-medium text-gray-900">${item.price * item.qty}.00</div>
+                              </div>
+                          ))}
+                      </div>
+                      
+                      <div className="mt-8 pt-4 border-t border-gray-100 space-y-2 text-right">
+                           <div className="flex justify-between text-gray-500 text-sm">
+                              <span>小計</span>
+                              <span>${showOrderModal.total}.00</span>
+                           </div>
+                           <div className="flex justify-between font-bold text-lg text-gray-900">
+                              <span>總計</span>
+                              <span>${showOrderModal.total}.00</span>
+                           </div>
+                      </div>
+                  </div>
+
+                  <div className="w-1/2 p-8 flex flex-col justify-center items-center bg-white relative">
+                       {/* CASE 1: 新訂單 (Incoming) */}
+                       {showOrderModal.status === 'incoming' && (
+                         <>
+                           <div className="text-center mb-12">
+                               <h3 className="text-gray-500 font-bold mb-6 text-lg">準備時間</h3>
+                               <div className="flex items-center justify-center gap-8">
+                                   <button onClick={() => adjustPrepTime(-5)} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200"><Minus size={32} className="text-gray-600"/></button>
+                                   <div className="text-6xl font-bold text-black">{prepTime} 分鐘</div>
+                                   <button onClick={() => adjustPrepTime(5)} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200"><Plus size={32} className="text-gray-600"/></button>
+                               </div>
+                           </div>
+
+                           <div className="w-full space-y-3 mt-auto">
+                               <button className="w-full py-4 bg-gray-100 text-gray-800 font-bold text-lg rounded-lg hover:bg-gray-200">
+                                   調整訂單
+                               </button>
+                               <div className={isTutorialActive && tutorialStep === 2 ? getHighlightClass(2) : ''}>
+                                  <button 
+                                      onClick={handleAcceptOrder}
+                                      className="w-full py-4 bg-black text-white font-bold text-lg rounded-lg hover:bg-gray-800 shadow-xl"
+                                  >
+                                      接受
+                                  </button>
+                                  <TutorialTip step={2} currentStep={tutorialStep} position="absolute bottom-full mb-4 left-1/2 -translate-x-1/2" arrowPosition="bottom">
+                                      確認內容無誤後，請按下黑色的「接受」按鈕。
+                                  </TutorialTip>
+                               </div>
+                           </div>
+                         </>
+                       )}
+
+                       {/* CASE 2: 準備中 (Preparing) - Step 4 */}
+                       {showOrderModal.status === 'preparing' && (
+                         <>
+                           <div className="w-full mb-auto mt-8">
+                               <div className="flex items-center justify-center gap-2 mb-6">
+                                  <span className="text-2xl font-bold text-gray-900">距離備妥時間：15 分鐘</span>
+                                  <button className="p-1 hover:bg-gray-100 rounded-full"><Edit2 size={18} className="text-gray-500"/></button>
+                               </div>
+                               
+                               <div className="bg-white border border-gray-200 rounded-lg p-6 text-center shadow-sm">
+                                  <p className="text-gray-600">外送合作夥伴會在訂單準備好時取餐。</p>
+                               </div>
+                           </div>
+
+                           <div className="w-full space-y-3 mt-auto">
+                               <button className="w-full py-4 bg-gray-100 text-gray-800 font-bold text-lg rounded-lg hover:bg-gray-200">
+                                   調整訂單
+                               </button>
+                               <div className={isTutorialActive && tutorialStep === 4 ? getHighlightClass(4) : ''}>
+                                  <button 
+                                      onClick={() => handleMarkReady(showOrderModal.id)}
+                                      className="w-full py-4 bg-black text-white font-bold text-lg rounded-lg hover:bg-gray-800 shadow-xl"
+                                  >
+                                      已備妥
+                                  </button>
+                                  <TutorialTip step={4} currentStep={tutorialStep} position="absolute bottom-full mb-4 left-1/2 -translate-x-1/2" arrowPosition="bottom">
+                                      餐點製作完成後，請按下「已備妥」。
+                                  </TutorialTip>
+                               </div>
+                           </div>
+                         </>
+                       )}
+
+                       {/* CASE 3: 已備妥 (Ready) */}
+                       {showOrderModal.status === 'ready' && (
+                          <div className="flex flex-col items-center justify-center h-full text-green-600">
+                             <CheckCircle size={64} className="mb-4"/>
+                             <h3 className="text-2xl font-bold">訂單已備妥</h3>
+                             <p className="text-gray-500 mt-2">等待外送員取餐</p>
+                          </div>
+                       )}
+                  </div>
+              </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const NavIcon = ({ icon, label, active, expanded }) => (
+  <div className={`flex items-center gap-4 px-3 py-2 cursor-pointer transition-all relative group ${expanded ? 'w-full hover:bg-gray-50 rounded-lg' : 'justify-center'}`}>
+    <div className={`p-2.5 rounded-full transition-colors flex-shrink-0 ${active ? 'bg-black text-white' : 'text-[#545454] group-hover:bg-gray-100'}`}>
+      {icon}
+    </div>
+    {expanded && <span className={`font-medium text-sm ${active ? 'font-bold text-black' : 'text-[#545454]'}`}>{label}</span>}
+  </div>
+);
+
+export default UberEatsSimulator;
